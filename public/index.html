@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FRESHERS' HIEST 2026 — Stage 1: Link Shuffle</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+  <!-- Matrix rain canvas -->
+  <canvas id="matrix-bg"></canvas>
+
+  <!-- Kali Linux Dragon Watermark -->
+  <div class="kali-watermark" aria-hidden="true"></div>
+
+  <!-- Floating Hacker Text Background -->
+  <div class="hacker-bg" id="hacker-bg" aria-hidden="true"></div>
+
+  <div class="container" id="main-container" style="opacity: 1;">
+    <!-- Header with ASCII Art -->
+    <header class="header">
+      <pre class="header__ascii" id="ascii-banner" aria-hidden="true">
+ ██████╗██╗   ██╗██████╗ ███████╗██████╗ 
+██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗
+██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝
+██║       ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗
+╚██████╗   ██║   ██████╔╝███████╗██║  ██║
+ ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝</pre>
+      <div class="header__lock">🔐</div>
+      <h1 class="header__title">FRESHERS' HIEST<span class="glow-green">2026</span></h1>
+      <p class="header__subtitle">
+        <span class="blink">█</span> STAGE 1 // LINK SHUFFLE & NETWORK RECON
+      </p>
+    </header>
+
+    <!-- Terminal Card -->
+    <main class="terminal-card">
+      <div class="terminal-card__bar">
+        <span class="dot dot--red"></span>
+        <span class="dot dot--yellow"></span>
+        <span class="dot dot--green"></span>
+        <span class="terminal-card__bar-text">root@cyber-ops:~/network_recon.sh</span>
+      </div>
+
+      <!-- System Info Bar -->
+      <div class="system-bar">
+        <span>SYS <span class="sys-value">SCANNING</span></span>
+        <span>STAGE <span class="sys-value">1 OF 3</span></span>
+        <span>LINKS <span class="sys-alert">15 DETECTED</span></span>
+        <span>AUTHENTIC <span class="sys-value">1 VALID</span></span>
+      </div>
+
+      <!-- Threat Level -->
+      <div class="threat-level">
+        <span class="threat-level__label">SIGNAL PURITY:</span>
+        <div class="threat-bars">
+          <div class="threat-bar active"></div>
+          <div class="threat-bar active"></div>
+          <div class="threat-bar"></div>
+          <div class="threat-bar"></div>
+          <div class="threat-bar"></div>
+        </div>
+        <span class="threat-level__text">DECOYS DETECTED</span>
+      </div>
+
+      <!-- Mission Briefing -->
+      <section class="mission">
+        <p class="mission__prefix">&gt; cat /classified/transmission_nodes.txt</p>
+        <div class="mission__message" style="border-left-color: var(--cyan);">
+          <p style="color: var(--text-bright); font-size: 1.05rem;">
+            WARNING: 14 of the detected transmission links are malformed honey-pots containing syntax corruption. Only
+            <strong>ONE</strong> authentic communication channel leads to the Stage 2 Cipher Challenge.
+          </p>
+        </div>
+        <p class="mission__note">
+          <span class="glow-cyan">⚠</span> Analyze the URLs below carefully. Clicking an invalid URL routes directly
+          into a security dead end.
+        </p>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- Links List Section -->
+      <section>
+        <h2 class="challenge__title" style="font-size: 1.2rem;">
+          <span class="icon-shield">🌐</span> SELECT TARGET GATEWAY
+        </h2>
+
+        <!-- Links Container -->
+        <div id="links-container" class="links-grid">
+          <div style="text-align: center; color: var(--cyan); padding: 1.5rem;">
+            [ SCANNING NETWORK FREQUENCIES... ]
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>&gt; <span class="glow-cyan">Cyber Cell</span> // Freshers' Hiest 2026</p>
+      <p class="footer__hint">&gt; Valid URL syntax conforms strictly to standard URI specifications.</p>
+    </footer>
+  </div>
+
+  <script>
+    // Fetch and render the shuffled links
+    async function loadShuffledLinks() {
+      const container = document.getElementById('links-container');
+      container.innerHTML = '<div style="text-align: center; color: var(--cyan); padding: 1.5rem;">[ SCANNING NETWORK FREQUENCIES... ]</div>';
+
+      try {
+        const response = await fetch('/api/links?t=' + Date.now());
+        const data = await response.json();
+
+        if (!data.links || data.links.length === 0) {
+          container.innerHTML = '<p style="color: var(--red);">FAILED TO LOAD NETWORK CHANNELS.</p>';
+          return;
+        }
+
+        container.innerHTML = '';
+        data.links.forEach((item, index) => {
+          const a = document.createElement('a');
+          a.className = 'url-link-item';
+          a.href = item.href;
+
+          const num = String(index + 1).padStart(2, '0');
+          a.innerHTML = `
+            <span class="url-link-index">[${num}]</span>
+            <span class="url-link-text">${escapeHtml(item.text)}</span>
+            <span class="url-link-arrow">➜</span>
+          `;
+          container.appendChild(a);
+        });
+      } catch (err) {
+        container.innerHTML = '<p style="color: var(--red);">ERROR CONNECTING TO RECON GATEWAY.</p>';
+      }
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Always reload fresh links on initial load or browser back/forward navigation
+    window.addEventListener('pageshow', (event) => {
+      loadShuffledLinks();
+    });
+
+    // Matrix background
+    const canvas = document.getElementById('matrix-bg');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const chars = '01010101CYBERFRESHERS2026LINKSHUFFLE';
+      const fontSize = 14;
+      const columns = canvas.width / fontSize;
+      const drops = Array(Math.floor(columns)).fill(1);
+
+      function draw() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#00ff41';
+        ctx.font = fontSize + 'px monospace';
+        for (let i = 0; i < drops.length; i++) {
+          const text = chars.charAt(Math.floor(Math.random() * chars.length));
+          ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+          if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+            drops[i] = 0;
+          }
+          drops[i]++;
+        }
+      }
+      setInterval(draw, 40);
+    }
+  </script>
+</body>
+
+</html>
