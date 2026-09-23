@@ -281,3 +281,8 @@ app.listen(PORT, () => {
   console.log(`  🔐 Server running at http://localhost:${PORT}`);
   console.log('──────────────────────────────────────────');
 });
+
+// Keep your existing routes and logic above
+
+// Ensure app is exported at the end of server.js:
+module.exports = app;
