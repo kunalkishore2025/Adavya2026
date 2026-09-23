@@ -4,16 +4,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FRESHERS' HIEST 2026 — Stage 1: Link Shuffle</title>
+  <title>FRESHERS' HEIST 2026 — Stage 1: Link Shuffle</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <!-- This links to your existing style.css which contains the Mudit overlay styles -->
   <link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
+  <!-- ═══ 1. Cyber Ops Terminal Init Screen (Loading Section) ═══ -->
+  <div id="cyber-init-overlay" class="cyber-init-overlay" style="display: none;">
+    <div class="cyber-init-terminal">
+      <div class="cyber-init-lines" id="cyber-init-lines"></div>
+      <div class="cyber-init-progress">
+        <div class="cyber-init-progress-bar" id="cyber-init-progress-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 2. Hacker Intrusion Screen Overlay (Greetings & Bit Rain) ═══ -->
+  <div id="intrusion-overlay" class="intrusion-overlay" aria-modal="true" role="dialog" style="display: none;">
+    <!-- Subtle Mask Background -->
+    <div class="intrusion-bg-image" id="intrusion-bg-image" aria-hidden="true"></div>
+
+    <!-- Digital Rain Canvas (Falling bits 0, 1, hex, cyber symbols) -->
+    <canvas id="intrusion-rain" aria-hidden="true"></canvas>
+
+    <!-- CRT / Noise / Scanline / Vignette overlays -->
+    <div class="intrusion-vignette" aria-hidden="true"></div>
+    <div class="intrusion-noise" aria-hidden="true"></div>
+    <div class="intrusion-scanlines" aria-hidden="true"></div>
+
+    <!-- Intrusion Terminal Content -->
+    <div class="intrusion-content">
+      <!-- Hacker Intrusion Message Lines -->
+      <div class="intrusion-text" id="intrusion-text">
+        <div class="intrusion-line" id="intrusion-line-1"></div>
+        <div class="intrusion-line" id="intrusion-line-2"></div>
+        <div class="intrusion-line intrusion-line--final" id="intrusion-line-3"></div>
+      </div>
+
+      <!-- Action Button -->
+      <button id="intrusion-begin-btn" class="intrusion-begin-btn" type="button" aria-label="Begin Challenge">
+        <span class="intrusion-begin-btn__bracket">[</span>
+        <span class="intrusion-begin-btn__text">BEGIN</span>
+        <span class="intrusion-begin-btn__bracket">]</span>
+      </button>
+    </div>
+  </div>
+
   <!-- Matrix rain canvas -->
   <canvas id="matrix-bg"></canvas>
 
@@ -23,7 +63,8 @@
   <!-- Floating Hacker Text Background -->
   <div class="hacker-bg" id="hacker-bg" aria-hidden="true"></div>
 
-  <div class="container" id="main-container" style="opacity: 1;">
+  <!-- Main Game Container (Fast 0.5s fade-in) -->
+  <div class="container" id="main-container" style="display: none; opacity: 0; transition: opacity 0.5s ease-in;">
     <!-- Header with ASCII Art -->
     <header class="header">
       <pre class="header__ascii" id="ascii-banner" aria-hidden="true">
@@ -34,7 +75,7 @@
 ╚██████╗   ██║   ██████╔╝███████╗██║  ██║
  ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝</pre>
       <div class="header__lock">🔐</div>
-      <h1 class="header__title">FRESHERS' HIEST<span class="glow-green">2026</span></h1>
+      <h1 class="header__title">FRESHERS' HEIST<span class="glow-green">2026</span></h1>
       <p class="header__subtitle">
         <span class="blink">█</span> STAGE 1 // LINK SHUFFLE & NETWORK RECON
       </p>
@@ -73,8 +114,8 @@
       <!-- Mission Briefing -->
       <section class="mission">
         <p class="mission__prefix">&gt; cat /classified/transmission_nodes.txt</p>
-        <div class="mission__message" style="border-left-color: var(--cyan);">
-          <p style="color: var(--text-bright); font-size: 1.05rem;">
+        <div class="mission__message mission__message--cyan">
+          <p>
             WARNING: 14 of the detected transmission links are malformed honey-pots containing syntax corruption. Only
             <strong>ONE</strong> authentic communication channel leads to the Stage 2 Cipher Challenge.
           </p>
@@ -89,13 +130,13 @@
 
       <!-- Links List Section -->
       <section>
-        <h2 class="challenge__title" style="font-size: 1.2rem;">
+        <h2 class="challenge__title challenge__title--lg">
           <span class="icon-shield">🌐</span> SELECT TARGET GATEWAY
         </h2>
 
         <!-- Links Container -->
         <div id="links-container" class="links-grid">
-          <div style="text-align: center; color: var(--cyan); padding: 1.5rem;">
+          <div class="links-status">
             [ SCANNING NETWORK FREQUENCIES... ]
           </div>
         </div>
@@ -104,23 +145,23 @@
 
     <!-- Footer -->
     <footer class="footer">
-      <p>&gt; <span class="glow-cyan">Cyber Cell</span> // Freshers' Hiest 2026</p>
+      <p>&gt; <span class="glow-cyan">Cyber Cell</span> // Freshers' Heist 2026</p>
       <p class="footer__hint">&gt; Valid URL syntax conforms strictly to standard URI specifications.</p>
     </footer>
   </div>
 
   <script>
-    // Fetch and render the shuffled links
+    // ─── Link Shuffle Logic ──────────────────────────────
     async function loadShuffledLinks() {
       const container = document.getElementById('links-container');
-      container.innerHTML = '<div style="text-align: center; color: var(--cyan); padding: 1.5rem;">[ SCANNING NETWORK FREQUENCIES... ]</div>';
+      container.innerHTML = '<div class="links-status">[ SCANNING NETWORK FREQUENCIES... ]</div>';
 
       try {
         const response = await fetch('/api/links?t=' + Date.now());
         const data = await response.json();
 
         if (!data.links || data.links.length === 0) {
-          container.innerHTML = '<p style="color: var(--red);">FAILED TO LOAD NETWORK CHANNELS.</p>';
+          container.innerHTML = '<p class="links-status links-status--error">FAILED TO LOAD NETWORK CHANNELS.</p>';
           return;
         }
 
@@ -139,7 +180,7 @@
           container.appendChild(a);
         });
       } catch (err) {
-        container.innerHTML = '<p style="color: var(--red);">ERROR CONNECTING TO RECON GATEWAY.</p>';
+        container.innerHTML = '<p class="links-status links-status--error">ERROR CONNECTING TO RECON GATEWAY.</p>';
       }
     }
 
@@ -152,12 +193,11 @@
         .replace(/'/g, '&#039;');
     }
 
-    // Always reload fresh links on initial load or browser back/forward navigation
     window.addEventListener('pageshow', (event) => {
       loadShuffledLinks();
     });
 
-    // Matrix background
+    // ─── Main Matrix Background ──────────────────────────
     const canvas = document.getElementById('matrix-bg');
     if (canvas) {
       const ctx = canvas.getContext('2d');
@@ -184,6 +224,298 @@
       }
       setInterval(draw, 40);
     }
+
+    // ─── Intro Animation Logic ───────────────────────────
+    (function () {
+      // Much faster boot terminal sequence speeds
+      const INIT_LINES = [
+        { html: '<span class="tag-boot">[BOOT]</span> <span class="text-green">Initializing Cyber Ops Terminal v4.2.6</span>', delay: 150 },
+        { html: '<span class="tag-kern">[KERN]</span> <span class="text-default">Loading kernel modules...</span>        <span class="status-ok">[ OK ]</span>', delay: 100 },
+        { html: '<span class="tag-init">[INIT]</span> <span class="text-default">Establishing encrypted tunnel...</span>  <span class="status-ok">[ OK ]</span>', delay: 100 },
+        { html: '<span class="tag-sec">[SEC]</span>  <span class="text-default">Firewall status:</span> <span class="text-yellow">ARMED</span>', delay: 100 },
+        { html: '<span class="tag-net">[NET]</span>  <span class="text-default">Intrusion detection:</span> <span class="text-green">ACTIVE</span>', delay: 100 },
+        { html: '<span class="tag-auth">[AUTH]</span> <span class="text-default">Biometric scanner:</span> <span class="text-yellow">STANDBY</span>', delay: 150 },
+        { html: '<span class="tag-auth">[AUTH]</span> <span class="alert-block">████████ UNAUTHORIZED ACCESS DETECTED ████████</span>', delay: 300 },
+        { html: '<span class="tag-sys">[SYS]</span>  <span class="text-default">Deploying countermeasures...</span>      <span class="status-ok">[ OK ]</span>', delay: 150 },
+        { html: '<span class="tag-vpn">[VPN]</span>  <span class="text-cyan">Secure tunnel allocated to FORTIS.</span>', delay: 100 },
+        { html: '<span class="tag-net">[NET]</span>  <span class="text-default">IP Address spoofed:</span> <span class="text-green">192.168</span><span class="text-dim">.██.██</span>', delay: 100 },
+        { html: '<span class="tag-kern">[KERN]</span> <span class="text-default">Decrypting mission files...</span>      <span class="status-ok">[ OK ]</span>', delay: 150 },
+        { html: '<span class="tag-sys">[SYS]</span>  <span class="text-default">Terminal ready. Awaiting operator input.</span>', delay: 200 },
+        { html: '<span class="text-access">&gt; ACCESS GRANTED — WELCOME, FRESHER.</span>', delay: 400 }
+      ];
+
+      const initOverlay = document.getElementById('cyber-init-overlay');
+      const linesContainer = document.getElementById('cyber-init-lines');
+      const progressBar = document.getElementById('cyber-init-progress-bar');
+      
+      const intrusionOverlay = document.getElementById('intrusion-overlay');
+      const mainContainer = document.getElementById('main-container');
+
+      function showMainContent() {
+        if (mainContainer) {
+          mainContainer.style.display = 'block';
+          setTimeout(() => {
+            mainContainer.style.opacity = '1';
+            mainContainer.style.pointerEvents = 'auto';
+          }, 50);
+        }
+      }
+
+      // ─── Rain & Hex Functions ───
+      let intrusionRainInterval = null;
+      let hexInterval = null;
+
+      function initIntrusionRain() {
+        const canvas = document.getElementById('intrusion-rain');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        function resize() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        const binChars = '01';
+        const hexChars = '0123456789ABCDEF';
+        const cyberSymbols = '⚡⚠☠✦◆▲►◄█▓▒░{}[]<>/\\|~^';
+        const allChars = binChars.repeat(22) + hexChars.repeat(3) + cyberSymbols;
+        const fontSize = 12;
+        
+        let columns, drops, speeds, alphas, sizes;
+
+        function initDrops() {
+          columns = Math.floor(canvas.width / fontSize);
+          drops = []; speeds = []; alphas = []; sizes = [];
+          for (let i = 0; i < columns; i++) {
+            drops.push(Math.random() * canvas.height / fontSize);
+            speeds.push(0.25 + Math.random() * 1.6);
+            alphas.push(0.02 + Math.random() * 0.08);
+            sizes.push(fontSize - 3 + Math.floor(Math.random() * 5));
+          }
+        }
+        initDrops();
+        window.addEventListener('resize', initDrops);
+
+        let glitchTimer = 0;
+        let isGlitching = false;
+
+        function draw() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          glitchTimer++;
+          if (glitchTimer > 180 + Math.random() * 300) {
+            isGlitching = true;
+            glitchTimer = 0;
+            setTimeout(() => { isGlitching = false; }, 60 + Math.random() * 80);
+          }
+
+          if (isGlitching) {
+            ctx.fillStyle = 'rgba(255, 34, 68, 0.06)';
+            ctx.fillRect(0, Math.random() * canvas.height, canvas.width, 2 + Math.random() * 8);
+          }
+
+          for (let i = 0; i < drops.length; i++) {
+            const char = allChars[Math.floor(Math.random() * allChars.length)];
+            const isBright = Math.random() > 0.95;
+            const isRed = (i % 6 === 0);
+
+            ctx.font = sizes[i] + 'px "JetBrains Mono", monospace';
+
+            if (isRed) {
+              ctx.fillStyle = isBright ? 'rgba(255, 70, 95, 0.85)' : 'rgba(255, 34, 68, 0.35)';
+              ctx.shadowColor = 'rgba(255, 34, 68, 0.6)';
+              ctx.shadowBlur = isBright ? 8 : 3;
+            } else if (isBright) {
+              ctx.fillStyle = 'rgba(120, 255, 160, 0.85)';
+              ctx.shadowColor = 'rgba(0, 255, 65, 0.6)';
+              ctx.shadowBlur = 6;
+            } else {
+              ctx.fillStyle = `rgba(0, 255, 65, ${alphas[i] * 3.5})`;
+              ctx.shadowBlur = 0;
+            }
+
+            ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+            ctx.shadowBlur = 0;
+
+            if (drops[i] * fontSize > canvas.height && Math.random() > 0.96) {
+              drops[i] = 0;
+              speeds[i] = 0.25 + Math.random() * 1.6;
+              alphas[i] = 0.02 + Math.random() * 0.08;
+            }
+            drops[i] += speeds[i];
+          }
+        }
+        if (intrusionRainInterval) clearInterval(intrusionRainInterval);
+        intrusionRainInterval = setInterval(draw, 33);
+      }
+
+      function spawnHexFragments() {
+        if (!intrusionOverlay) return;
+        const hexStrings = [
+          '0xDEADBEEF', '0xCAFEBABE', '0x1337C0DE', '0xFF00FF',
+          '0xBAADF00D', '0x8BADF00D', '0xFEEDFACE', '0xC0FFEE',
+          '0x0B00B135', 'SYN_FLOOD', 'ACK_STORM', 'TCP_RST'
+        ];
+
+        function spawn() {
+          const el = document.createElement('div');
+          el.className = 'intrusion-hex-fragment';
+          el.textContent = hexStrings[Math.floor(Math.random() * hexStrings.length)];
+          el.style.left = (5 + Math.random() * 90) + '%';
+          el.style.animationDuration = (8 + Math.random() * 14) + 's';
+          el.style.fontSize = (0.55 + Math.random() * 0.3) + 'rem';
+          el.style.opacity = 0.04 + Math.random() * 0.05;
+          intrusionOverlay.appendChild(el);
+          el.addEventListener('animationend', () => el.remove());
+        }
+
+        for (let i = 0; i < 7; i++) setTimeout(spawn, i * 350);
+        hexInterval = setInterval(spawn, 2200);
+      }
+
+      function intrusionTypewriter(elementId, text, speed, callback) {
+        const el = document.getElementById(elementId);
+        if (!el) { if (callback) callback(); return; }
+
+        el.classList.add('typing');
+        const chars = Array.from(text);
+        let index = 0;
+
+        function type() {
+          if (index < chars.length) {
+            el.textContent += chars[index];
+            index++;
+            setTimeout(type, speed + (Math.random() * (speed * 0.5)));
+          } else {
+            el.classList.remove('typing');
+            el.classList.add('done');
+            if (callback) callback();
+          }
+        }
+        type();
+      }
+
+      // ─── Sequence 2: Cyber Ops Boot Terminal ───
+      function runInitSequence() {
+        initOverlay.style.display = 'flex';
+        
+        let lineIndex = 0;
+        const totalLines = INIT_LINES.length;
+
+        function addInitLine() {
+          if (lineIndex >= totalLines) {
+            // Wait shortly before clearing and revealing main content
+            setTimeout(function () {
+              initOverlay.classList.add('fade-out');
+              sessionStorage.setItem('cyber_init_done', '1');
+              setTimeout(function () {
+                initOverlay.style.display = 'none';
+                showMainContent();
+              }, 200); // Super fast fade away
+            }, 300); // Super fast pause at end
+            return;
+          }
+
+          const lineData = INIT_LINES[lineIndex];
+          const lineEl = document.createElement('div');
+          lineEl.classList.add('cyber-init-line');
+          lineEl.innerHTML = lineData.html;
+          linesContainer.appendChild(lineEl);
+
+          if (progressBar) {
+            progressBar.style.width = (((lineIndex + 1) / totalLines) * 100) + '%';
+          }
+
+          lineIndex++;
+          setTimeout(addInitLine, lineData.delay);
+        }
+        addInitLine();
+      }
+
+      // ─── Sequence 1: Hacker Intrusion Screen ───
+      function runIntrusionSequence() {
+        intrusionOverlay.style.display = 'flex';
+        intrusionOverlay.classList.add('active');
+
+        const bgImage = document.getElementById('intrusion-bg-image');
+        const beginBtn = document.getElementById('intrusion-begin-btn');
+        const line3 = document.getElementById('intrusion-line-3');
+
+        if (bgImage) bgImage.classList.add('visible');
+
+        // Step 1: Type the greetings out FIRST
+        setTimeout(() => {
+          intrusionTypewriter('intrusion-line-1', '⚠️ Greetings Intruder ⚠️', 55, () => {
+            setTimeout(() => {
+              intrusionTypewriter('intrusion-line-2', 'You crawled inside. 🩸 Let\'s see if you ever crawl out.', 45, () => {
+                const line2 = document.getElementById('intrusion-line-2');
+                if (line2) {
+                  line2.innerHTML = line2.innerHTML.replace('🩸', '<span class="blood-drop-glow">🩸</span>');
+                }
+                setTimeout(() => {
+                  intrusionTypewriter('intrusion-line-3', 'Begin... if you have some guts.', 50, () => {
+                    if (line3) {
+                      line3.classList.add('glitch-active');
+                      setTimeout(() => line3.classList.remove('glitch-active'), 650);
+                    }
+
+                    // Step 2: Start the Bit Rain AFTER greetings finish
+                    initIntrusionRain();
+                    spawnHexFragments();
+
+                    setTimeout(() => {
+                      if (beginBtn) beginBtn.classList.add('visible');
+                    }, 700);
+                  });
+                }, 500);
+              });
+            }, 500);
+          });
+        }, 100);
+
+        // Step 3: Button clicked -> Hide intrusion screen and run terminal boot sequence
+        if (beginBtn) {
+          beginBtn.onclick = function () {
+            intrusionOverlay.classList.remove('active');
+            intrusionOverlay.classList.add('fade-out');
+
+            if (intrusionRainInterval) clearInterval(intrusionRainInterval);
+            if (hexInterval) clearInterval(hexInterval);
+
+            sessionStorage.setItem('cyber_intrusion_done', '1');
+
+            setTimeout(() => {
+              intrusionOverlay.style.display = 'none';
+              runInitSequence(); // Move to the terminal boot sequence FAST
+            }, 200);
+          };
+        }
+      }
+
+      // ─── Flow Controller ───
+      const intrusionDone = sessionStorage.getItem('cyber_intrusion_done');
+      const initDone = sessionStorage.getItem('cyber_init_done');
+
+      if (intrusionDone && initDone) {
+        initOverlay.style.display = 'none';
+        intrusionOverlay.style.display = 'none';
+        showMainContent();
+      } else if (intrusionDone && !initDone) {
+        intrusionOverlay.style.display = 'none';
+        runInitSequence();
+      } else {
+        // Run full sequence from the start
+        runIntrusionSequence();
+      }
+
+      // Console helpers
+      window.restartCyberExperience = function () {
+        sessionStorage.clear();
+        location.reload();
+      };
+      
+    })();
   </script>
 </body>
 
