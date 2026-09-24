@@ -248,8 +248,8 @@ app.get('/download', (req, res) => {
     });
   }
 
-  const filePath = path.join(__dirname, 'protected', 'Vault.zip');
-  res.download(filePath, 'Vault_File.zip');
+  const filePath = path.join(__dirname, 'protected', 'image.jpg');
+  res.download(filePath, 'image.jpg');
 
 });
 
