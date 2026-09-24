@@ -8,6 +8,80 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
+
+  <style>
+    /* Scanline overlay using native theme transparency */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.45) 50%);
+      background-size: 100% 4px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    /* Target bracket styling for terminal-card matching existing borders */
+    .terminal-card {
+      position: relative;
+    }
+
+    .terminal-card::before,
+    .terminal-card::after {
+      content: "";
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-color: var(--green);
+      border-style: solid;
+      pointer-events: none;
+    }
+
+    .terminal-card::before {
+      top: -1px;
+      left: -1px;
+      border-width: 2px 0 0 2px;
+    }
+
+    .terminal-card::after {
+      bottom: -1px;
+      right: -1px;
+      border-width: 0 2px 2px 0;
+    }
+
+    /* Live status badge pulsing */
+    .status-pulse {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      box-shadow: var(--glow-green);
+      margin-right: 6px;
+      animation: pulse-glow 1.5s infinite ease-in-out;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    /* Reactive hover and focus states using existing variables */
+    .download-btn:hover {
+      box-shadow: var(--glow-green);
+      transform: translateY(-2px);
+    }
+
+    .challenge__input:focus {
+      border-color: var(--green);
+      box-shadow: var(--glow-green);
+    }
+
+    .challenge__submit:hover {
+      box-shadow: var(--glow-cyan);
+      transform: translateY(-2px);
+    }
+  </style>
 </head>
 <body>
   <!-- Matrix rain canvas -->
@@ -41,21 +115,23 @@
       <div class="system-bar">
         <span>STAGE <span class="sys-value">3 OF 3</span></span>
         <span>AUTH <span class="sys-value">SOLVED</span></span>
-        <span>STATUS <span style="color: var(--green);">UNLOCKED</span></span>
+        <span>STATUS <span style="color: var(--green);"><span class="status-pulse"></span>UNLOCKED</span></span>
         <span>PAYLOAD <span class="sys-value">READY</span></span>
       </div>
 
       <section class="success-content">
         <div class="success-icon">🎯</div>
         <h2 class="success-title glow-green">CLEARANCE CONFIRMED</h2>
-        <p class="success-subtitle" style="color: red; font-size: 1.25rem; font-weight: bold">BetaLabs Secret Vault</p>
+        <p class="success-subtitle" style="color: red; font-size: 1.25rem; font-weight: bold; text-shadow: 0 0 10px rgba(255, 0, 0, 0.4);">
+          BetaLabs Secret Vault
+        </p>
 
         <div class="divider"></div>
 
         <!-- Download Section -->
         <div class="download-section">
           <p class="download-label" style="color: white">&gt; Classified Mission Archive:</p>
-          <p class="download-filename">📁 Vault_Image</p>
+          <p class="download-filename glow-cyan" style="font-size: 1.2rem; font-weight: bold; margin: 0.5rem 0 1.2rem 0;">📁 Vault_Image</p>
           <a href="/download" id="download-btn" class="download-btn">
             [ ⬇ Download the File ]
           </a>
@@ -101,20 +177,6 @@
     </footer>
   </div>
 
-  <!-- Hacked Modal -->
-  <div class="modal-overlay" id="hacked-modal">
-    <div class="hacked-modal-box">
-      <div style="font-size: 3rem; margin-bottom: 0.5rem;">💻 ⚡ 🏴‍☠️</div>
-      <h2 class="hacked-modal-title">Hacked</h2>
-      <p class="hacked-modal-subtitle">&gt; SYSTEM COMPROMISED // ACCESS LEVEL: MASTER</p>
-      <div class="divider" style="margin: 1.5rem 0;"></div>
-      <p style="color: var(--text-bright); margin-bottom: 2rem; font-size: 1rem;">
-        Congratulations Operative! You have successfully solved the Freshers' Heist 2026 and cracked the final secret code.
-      </p>
-      <button class="hacked-close-btn" onclick="closeHackedModal()">[ DISMISS ALERT ]</button>
-    </div>
-  </div>
-
   <script>
     function verifyFinalCode() {
       const input = document.getElementById('secret-code-input');
@@ -123,27 +185,19 @@
       const resultMsg = document.getElementById('final-result-message');
 
       // Exact hardcoded string verification
-      if (val.toLowerCase() === 'yes' ) {
-        resultArea.style.display = 'block';
-        resultArea.className = 'result result--success';
-        resultMsg.textContent = 'ACCESS GRANTED — AUTHORIZATION CONFIRMED: Hacked';
-
-        // Trigger modal
-        document.getElementById('hacked-modal').classList.add('active');
-
-        // Also trigger browser alert as requested
-        setTimeout(() => {
-          alert('Hacked');
-        }, 100);
+      if (val.toLowerCase() === '8cf41a596d0eff021e8f96606ce27ae642a0d6f583fa3599d58862ada4acc94fa6bdba24b8b098fe657c26bf4c830c12b1e0aef235b65784d3f59610a72b6149' ||
+          val.toLowerCase() === 'a8d1b2ccbc62d324637f61ccb381af96dcf425816b2a2716e5145a4a0baccd22be380d177c9f5a70e0b1b68cc1c37acec5cf4e45d1e5de812987e6239ccfb323' ||
+          val.toLowerCase() === 'ae08c7dfc3ae44eccf372fe2df402ee52db60beca0d245881829ed5dc0e45ff8cf28d4b04abd37f280c1c3aea12ff12337c39014172f5160f76f83aabb1b4545' ||
+          val.toLowerCase() === '617565d950b9e6d9d697e96323fceca3d6c9718a8a4e8f4112612766a5238ca5c105ba89de72ebfc89e6534d8c143b5f30bf2ecf5f2def96188c429acedd3761' ||
+          val.toLowerCase() === 'd5f83c8f929acdb02f1dfcbdf80a212e69c3fc6727e3931f3ecb4a3b87299b3227626c71854c367c55a8347256c1616a26fd683cc050a80ec252e7330ad76083' ||
+          val.toLowerCase() === '0c8fa0cbd6dbaf1998f3738e394d7332a9da420fb0da0d3725f83d1bbf10e73eab55b27468c937c2258232e1b5f5cd2ed003f901001d21ecf9cddf81a656de8f') {
+        // Redirect immediately to the success page
+        window.location.href = '/success';
       } else {
         resultArea.style.display = 'block';
         resultArea.className = 'result result--error';
         resultMsg.textContent = 'ACCESS DENIED — Invalid authorization code.';
       }
-    }
-
-    function closeHackedModal() {
-      document.getElementById('hacked-modal').classList.remove('active');
     }
 
     // Matrix background

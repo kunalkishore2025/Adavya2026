@@ -266,11 +266,14 @@ app.post('/api/verify-secret', (req, res) => {
 });
 
 // Backwards compatibility for /success route
+// Serve the final success page
 app.get('/success', (req, res) => {
+  // Check if they have solved stage 2 before letting them see success
   if (!req.session || !req.session.stage2Solved) {
     return res.redirect('/');
   }
-  res.redirect('/payload');
+  // Send the actual success.html file
+  res.sendFile(path.join(__dirname, 'views', 'success.html'));
 });
 
 // ─── Start Server ───────────────────────────────────────────
