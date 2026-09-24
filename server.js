@@ -206,7 +206,7 @@ app.post('/api/verify-cipher', (req, res) => {
   const expected = req.session.currentChallenge.ciphertext;
 
   // Strict verification (with tolerance for trimmed newline/trailing carriage returns)
-  const isMatch = (userAnswer === expected) || (userAnswer.trim() === expected.trim());
+  const isMatch = (userAnswer.toLowerCase()=== expected.toLowerCase()) || (userAnswer.toLowerCase().trim() === expected.toLowerCase().trim());
 
   if (isMatch) {
     // Set session flag marking Stage 2 as solved
