@@ -1,5 +1,6 @@
 const express = require('express');
-const session = require('express-session');
+const cookieSession = require('cookie-session'); // Replaced express-session
+const crypto = require('crypto'); // Added for generating secure tokens
 const path = require('path');
 const fs = require('fs');
 
@@ -10,14 +11,11 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Session middleware — keeps track of current challenge & solved stage flags
-app.use(session({
-  secret: 'cyber-freshers-2026-secret-key-scavenger-hunt',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    maxAge: 60 * 60 * 1000 // 1 hour
-  }
+// Session middleware — survives Vercel restarts via encrypted cookies
+app.use(cookieSession({
+  name: 'heist-session',
+  keys: ['cyber-freshers-2026-secret-key-scavenger-hunt'], // Encrypts the cookie
+  maxAge: 2 * 60 * 60 * 1000 // 2 hours
 }));
 
 // Serve static assets from /public (CSS, images, client scripts)
@@ -27,11 +25,6 @@ app.use(express.static(path.join(__dirname, 'public'), {
 
 // ─── Helper Functions / File Utilities ──────────────────────
 
-/**
- * Reads Fake_Url.txt and separates into:
- * - First 60 lines: 'easy' syntax errors
- * - Next 40 lines: 'hard' syntax errors
- */
 function getFakeUrls() {
   const filePath = path.join(__dirname, 'Fake_Url.txt');
   const lines = fs.readFileSync(filePath, 'utf8')
@@ -45,9 +38,6 @@ function getFakeUrls() {
   };
 }
 
-/**
- * Reads Good_Links.txt and returns an array of valid decoy URLs
- */
 function getGoodLinks() {
   const filePath = path.join(__dirname, 'Good_Links.txt');
   return fs.readFileSync(filePath, 'utf8')
@@ -56,9 +46,6 @@ function getGoodLinks() {
     .filter(Boolean);
 }
 
-/**
- * Reads message.txt and parses comma-separated Plaintext,Ciphertext pairs
- */
 function getMessagePairs() {
   const filePath = path.join(__dirname, 'message.txt');
   const lines = fs.readFileSync(filePath, 'utf8')
@@ -75,9 +62,6 @@ function getMessagePairs() {
   });
 }
 
-/**
- * Randomly pick N distinct elements from an array
- */
 function pickRandomDistinct(arr, count) {
   const copy = [...arr];
   const selected = [];
@@ -88,13 +72,9 @@ function pickRandomDistinct(arr, count) {
     selected.push(copy[randIdx]);
     copy.splice(randIdx, 1);
   }
-
   return selected;
 }
 
-/**
- * Fisher-Yates in-place shuffle
- */
 function shuffleArray(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -103,16 +83,8 @@ function shuffleArray(arr) {
   return arr;
 }
 
-// ─── STAGE 1: The Link Shuffle Routes ───────────────────────
+// ─── STAGE 1: The Link Shuffle & Guards ─────────────────────
 
-/**
- * GET /api/links
- * Dynamically selects:
- * - 6 random easy URLs from Fake_Url.txt (first 60 lines)
- * - 4 random hard URLs from Fake_Url.txt (next 40 lines)
- * - 1 random valid URL text from Good_Links.txt
- * Shuffles all 11 items and returns them.
- */
 app.get('/api/links', (req, res) => {
   try {
     const { easyUrls, hardUrls } = getFakeUrls();
@@ -122,23 +94,25 @@ app.get('/api/links', (req, res) => {
     const selectedHard = pickRandomDistinct(hardUrls, 7);
     const selectedGood = pickRandomDistinct(goodLinks, 1);
 
-    // Build the 10 bad items (route to /dead-end)
+    // Generate a one-time secure token for this session
+    const stage1Token = crypto.randomBytes(8).toString('hex');
+    req.session.stage1Token = stage1Token;
+
+    // Build the bad items
     const badItems = [...selectedEasy, ...selectedHard].map(url => ({
       text: url,
       href: '/dead-end',
       isValid: false
     }));
 
-    // Build the 1 valid item (route to /challenge)
+    // Build the valid item with the secure token attached
     const goodItem = {
       text: selectedGood[0] || 'https://cyber-ops.security-cell.org/terminal',
-      href: '/challenge',
+      href: `/verify-stage1?token=${stage1Token}`,
       isValid: true
     };
 
-    // Combine and shuffle 11 items
     const allLinks = shuffleArray([...badItems, goodItem]);
-
     res.json({ links: allLinks });
   } catch (err) {
     console.error('Error in /api/links:', err);
@@ -146,42 +120,49 @@ app.get('/api/links', (req, res) => {
   }
 });
 
-/**
- * GET /dead-end
- * Generic "Dead End" HTML page displaying "Oops You hit a dead end"
- */
 app.get('/dead-end', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'dead-end.html'));
 });
 
-// ─── STAGE 2: Rail Fence Cipher Challenge Routes ────────────
+// Verifies the user actually clicked the link instead of guessing the URL
+app.get('/verify-stage1', (req, res) => {
+  const userToken = req.query.token;
+  
+  if (userToken && req.session.stage1Token && userToken === req.session.stage1Token) {
+    req.session.stage1Solved = true;
+    req.session.stage1Token = null; // Clear token so it can't be reused
+    res.redirect('/challenge');
+  } else {
+    res.redirect('/dead-end');
+  }
+});
 
-/**
- * GET /challenge
- * Serves Stage 2: Rail Fence Cipher challenge page
- */
-app.get('/challenge', (req, res) => {
+// Middleware Guard for Stage 1
+function requireStage1(req, res, next) {
+  if (req.session && req.session.stage1Solved) {
+    next();
+  } else {
+    res.redirect('/');
+  }
+}
+
+// ─── STAGE 2: Rail Fence Cipher Challenge & Guards ──────────
+
+// Protected by requireStage1
+app.get('/challenge', requireStage1, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'challenge.html'));
 });
 
-/**
- * GET /api/challenge-question
- * Randomly selects one line from message.txt,
- * stores the expected ciphertext in session,
- * and sends only the Plaintext to the frontend.
- */
 app.get('/api/challenge-question', (req, res) => {
   try {
     const pairs = getMessagePairs();
     const randomPair = pairs[Math.floor(Math.random() * pairs.length)];
 
-    // Store current challenge in session
     req.session.currentChallenge = {
       plaintext: randomPair.plaintext,
       ciphertext: randomPair.ciphertext
     };
 
-    // Return only plaintext
     res.json({ plaintext: randomPair.plaintext });
   } catch (err) {
     console.error('Error in /api/challenge-question:', err);
@@ -189,11 +170,6 @@ app.get('/api/challenge-question', (req, res) => {
   }
 });
 
-/**
- * POST /api/verify-cipher
- * Strictly verifies user's answer against the ciphertext paired with
- * the currently active challenge in the user's session.
- */
 app.post('/api/verify-cipher', (req, res) => {
   if (!req.session.currentChallenge) {
     return res.status(400).json({
@@ -205,11 +181,10 @@ app.post('/api/verify-cipher', (req, res) => {
   const userAnswer = (req.body.answer || '');
   const expected = req.session.currentChallenge.ciphertext;
 
-  // Strict verification (with tolerance for trimmed newline/trailing carriage returns)
-  const isMatch = (userAnswer.toLowerCase()=== expected.toLowerCase()) || (userAnswer.toLowerCase().trim() === expected.toLowerCase().trim());
+  // Simplified and safe strict matching
+  const isMatch = userAnswer.toLowerCase().trim() === expected.toLowerCase().trim();
 
   if (isMatch) {
-    // Set session flag marking Stage 2 as solved
     req.session.stage2Solved = true;
     return res.json({
       success: true,
@@ -224,68 +199,72 @@ app.post('/api/verify-cipher', (req, res) => {
   }
 });
 
-// ─── STAGE 3: The Final Payload Routes ──────────────────────
-
-/**
- * GET /payload
- * Protected page — only accessible after solving Stage 2.
- */
-app.get('/payload', (req, res) => {
-  if (!req.session || !req.session.stage2Solved) {
-    return res.redirect('/');
+// Middleware Guard for Stage 2
+function requireStage2(req, res, next) {
+  if (req.session && req.session.stage2Solved) {
+    next();
+  } else {
+    res.redirect('/challenge');
   }
+}
+
+// ─── STAGE 3: The Final Payload & Guards ────────────────────
+
+// Protected by requireStage2
+app.get('/payload', requireStage2, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'payload.html'));
 });
 
-/**
- * GET /download
- * Protected file download — only accessible after solving Stage 2.
- */
-app.get('/download', (req, res) => {
-  if (!req.session || !req.session.stage2Solved) {
-    return res.status(403).json({
-      error: 'ACCESS DENIED — Complete the cipher challenge first.'
-    });
-  }
-
+app.get('/download', requireStage2, (req, res) => {
   const filePath = path.join(__dirname, 'protected', 'Vault.zip');
   res.download(filePath, 'Vault.zip');
-
 });
 
-/**
- * POST /api/verify-secret
- * Endpoint to verify the final secret code VmljdG9yeSA=
- */
+// Valid final codes hidden on the server
+const validFinalCodes = [
+  '8cf41a596d0eff021e8f96606ce27ae642a0d6f583fa3599d58862ada4acc94fa6bdba24b8b098fe657c26bf4c830c12b1e0aef235b65784d3f59610a72b6149',
+  'a8d1b2ccbc62d324637f61ccb381af96dcf425816b2a2716e5145a4a0baccd22be380d177c9f5a70e0b1b68cc1c37acec5cf4e45d1e5de812987e6239ccfb323',
+  'ae08c7dfc3ae44eccf372fe2df402ee52db60beca0d245881829ed5dc0e45ff8cf28d4b04abd37f280c1c3aea12ff12337c39014172f5160f76f83aabb1b4545',
+  '617565d950b9e6d9d697e96323fceca3d6c9718a8a4e8f4112612766a5238ca5c105ba89de72ebfc89e6534d8c143b5f30bf2ecf5f2def96188c429acedd3761',
+  'd5f83c8f929acdb02f1dfcbdf80a212e69c3fc6727e3931f3ecb4a3b87299b3227626c71854c367c55a8347256c1616a26fd683cc050a80ec252e7330ad76083',
+  '0c8fa0cbd6dbaf1998f3738e394d7332a9da420fb0da0d3725f83d1bbf10e73eab55b27468c937c2258232e1b5f5cd2ed003f901001d21ecf9cddf81a656de8f'
+];
+
 app.post('/api/verify-secret', (req, res) => {
-  const code = (req.body.code || '').trim();
-  if (code === 'You Succeeded!') {
-    return res.json({ success: true, message: 'Hacked' });
+  const code = (req.body.code || '').trim().toLowerCase();
+  
+  if (validFinalCodes.includes(code)) {
+    req.session.stage3Solved = true;
+    return res.json({ success: true });
   }
-  return res.json({ success: false, message: 'Invalid code.' });
+  
+  return res.json({ 
+    success: false, 
+    message: 'ACCESS DENIED — Invalid authorization code.' 
+  });
 });
 
-// Backwards compatibility for /success route
-// Serve the final success page
-app.get('/success', (req, res) => {
-  // Check if they have solved stage 2 before letting them see success
-  if (!req.session || !req.session.stage2Solved) {
-    return res.redirect('/');
+// Middleware Guard for Stage 3 (Success Page)
+function requireStage3(req, res, next) {
+  if (req.session && req.session.stage3Solved) {
+    next();
+  } else {
+    res.redirect('/payload');
   }
-  // Send the actual success.html file
+}
+
+// Protected by requireStage3
+app.get('/success', requireStage3, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'success.html'));
 });
 
 // ─── Start Server ───────────────────────────────────────────
 app.listen(PORT, () => {
   console.log('──────────────────────────────────────────');
-  console.log("  Freshers' Hiest 2026 — 3-Stage Scavenger Hunt");
+  console.log("  Freshers' Heist 2026 — 3-Stage Scavenger Hunt");
   console.log('──────────────────────────────────────────');
   console.log(`  🔐 Server running at http://localhost:${PORT}`);
   console.log('──────────────────────────────────────────');
 });
 
-// Keep your existing routes and logic above
-
-// Ensure app is exported at the end of server.js:
 module.exports = app;

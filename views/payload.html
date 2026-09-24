@@ -178,26 +178,46 @@
   </div>
 
   <script>
-    function verifyFinalCode() {
+    async function verifyFinalCode() {
       const input = document.getElementById('secret-code-input');
       const val = input.value.trim();
       const resultArea = document.getElementById('final-result-area');
       const resultMsg = document.getElementById('final-result-message');
+      const submitBtn = document.getElementById('verify-secret-btn');
 
-      // Exact hardcoded string verification
-      if (val.toLowerCase() === '8cf41a596d0eff021e8f96606ce27ae642a0d6f583fa3599d58862ada4acc94fa6bdba24b8b098fe657c26bf4c830c12b1e0aef235b65784d3f59610a72b6149' ||
-          val.toLowerCase() === 'a8d1b2ccbc62d324637f61ccb381af96dcf425816b2a2716e5145a4a0baccd22be380d177c9f5a70e0b1b68cc1c37acec5cf4e45d1e5de812987e6239ccfb323' ||
-          val.toLowerCase() === 'ae08c7dfc3ae44eccf372fe2df402ee52db60beca0d245881829ed5dc0e45ff8cf28d4b04abd37f280c1c3aea12ff12337c39014172f5160f76f83aabb1b4545' ||
-          val.toLowerCase() === '617565d950b9e6d9d697e96323fceca3d6c9718a8a4e8f4112612766a5238ca5c105ba89de72ebfc89e6534d8c143b5f30bf2ecf5f2def96188c429acedd3761' ||
-          val.toLowerCase() === 'd5f83c8f929acdb02f1dfcbdf80a212e69c3fc6727e3931f3ecb4a3b87299b3227626c71854c367c55a8347256c1616a26fd683cc050a80ec252e7330ad76083' ||
-          val.toLowerCase() === '0c8fa0cbd6dbaf1998f3738e394d7332a9da420fb0da0d3725f83d1bbf10e73eab55b27468c937c2258232e1b5f5cd2ed003f901001d21ecf9cddf81a656de8f') {
-        // Redirect immediately to the success page
-        window.location.href = '/success';
-      } else {
+      // Change button text while checking
+      submitBtn.innerHTML = '<span>[ VERIFYING... ]</span>';
+      submitBtn.style.pointerEvents = 'none';
+
+      try {
+        // Send the typed code to our secure backend
+        const response = await fetch('/api/verify-secret', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: val })
+        });
+        
+        const data = await response.json();
+
+        if (data.success) {
+          // The server said YES. Move to success page.
+          window.location.href = '/success';
+        } else {
+          // The server said NO. Show error.
+          resultArea.style.display = 'block';
+          resultArea.className = 'result result--error';
+          resultMsg.textContent = data.message;
+        }
+      } catch (err) {
+        // Handle server/network errors
         resultArea.style.display = 'block';
         resultArea.className = 'result result--error';
-        resultMsg.textContent = 'ACCESS DENIED — Invalid authorization code.';
+        resultMsg.textContent = 'SYSTEM ERROR — Connection failed.';
       }
+
+      // Reset button
+      submitBtn.innerHTML = '<span>[ VERIFY CODE ]</span>';
+      submitBtn.style.pointerEvents = 'auto';
     }
 
     // Matrix background
