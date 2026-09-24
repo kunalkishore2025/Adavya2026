@@ -123,7 +123,7 @@
       const resultMsg = document.getElementById('final-result-message');
 
       // Exact hardcoded string verification
-      if (val === 'VmljdG9yeSA=') {
+      if (val.toLowerCase() === 'yes' ) {
         resultArea.style.display = 'block';
         resultArea.className = 'result result--success';
         resultMsg.textContent = 'ACCESS GRANTED — AUTHORIZATION CONFIRMED: Hacked';
